@@ -1,4 +1,4 @@
-from Tkinter import *
+from tkinter import *
 from time import time, localtime, strftime
 
 # This code was taken from: http://code.activestate.com/recipes/576688-tooltip-for-tkinter/
@@ -100,7 +100,7 @@ def xrange2d( n,m ):
     Returns:
       A generator of values in a 2d range
     """
-    return ( (i,j) for i in xrange(n) for j in xrange(m) )
+    return ( (i,j) for i in range(n) for j in range(m) )
 
 def range2d( n,m ):
     """

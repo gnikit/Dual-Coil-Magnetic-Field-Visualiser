@@ -22,3 +22,17 @@ Elements to inspect the magnetic field include:
 ## Sphere
 
 ![symbol_nav](./doc/sphere(1,1).png)
+
+## How to run
+
+First you need to install `mayavi` and a working backend for your OS.
+
+```bash
+pip install PySide2 mayavi
+```
+
+Run GUI:
+
+```bash
+python Open_me.py
+```
