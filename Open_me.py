@@ -4,8 +4,8 @@
 import sys
 import os
 import subprocess
-from tkinter import *
 import numpy as np
+import tkinter as tk
 from mayavi import mlab
 from scipy import special
 from tkinter import messagebox as msg
@@ -21,14 +21,13 @@ from TkInterToolTip import ToolTip
 TITLE_FONT = ("Times New Roman", 18, "bold")
 
 
-class Menu(Tk):
+class Menu(tk.Frame):
     def __init__(self, *args, **kwargs):
-        Tk.__init__(self, *args, **kwargs)
-
+        tk.Frame.__init__(self, *args, **kwargs)
         # the container is where we'll stack a bunch of frames
         # on top of each other, then the one we want visible
         # will be raised above the others
-        container = Frame(self)
+        container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
@@ -49,28 +48,28 @@ class Menu(Tk):
         framee = self.frames[c]
         framee.tkraise()
 
-    # def quit(self):
-    #    self.root.quit()
-    #    self.root.destroy()
+    def quit(self):
+        self.root.quit()
+        self.root.destroy()
 
 
-class StartPage(Frame):
+class StartPage(tk.Frame):
     def __init__(self, parent, controller):
-        Frame.__init__(self, parent)
+        tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = Label(self, text="Home Page", font=TITLE_FONT)
+        label = tk.Label(self, text="Home Page", font=TITLE_FONT)
         # img = PhotoImage(file="1.gif")             #Image in the background
         # container_lbl = Label(self, image = img)    #not working for some reason
-        container_lbl = Label(self, bg="orange")
+        container_lbl = tk.Label(self, bg="orange")
         container_lbl.pack(side="bottom", fill="both", expand=True)
         label.pack(side="top", fill="x", pady=10)
 
-        button1 = Button(
+        button1 = tk.Button(
             self,
             text="Go to Magnetic Field Simulation",
             command=lambda: controller.show_frame(Visualisation),
         )
-        button2 = Button(
+        button2 = tk.Button(
             self, text="Go to Lab Report", command=lambda: controller.show_frame(Report)
         )
         # button3 = Button(self, text="Go to Page Three",
@@ -80,33 +79,33 @@ class StartPage(Frame):
         # button3.pack()
 
 
-class Report(Frame):
+class Report(tk.Frame):
     def __init__(self, parent, controller):
         """
         Opens the lab report.
         """
-        Frame.__init__(self, parent)
+        tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = Label(self, text="Lab Report Tab", font=TITLE_FONT)
+        label = tk.Label(self, text="Lab Report Tab", font=TITLE_FONT)
         label.pack(side="top", fill="x", pady=10)
-        button = Button(
+        button = tk.Button(
             self,
             text="Go to Home Page",
             command=lambda: controller.show_frame(StartPage),
         )
         button.pack()
-        frame = Frame(self)
+        frame = tk.Frame(self)
         frame.pack()
         self.Inputs(frame)
-        container_lbl = Label(self, bg="orange")
+        container_lbl = tk.Label(self, bg="orange")
         container_lbl.pack(side="bottom", fill="both", expand=True)
 
     def Inputs(self, frame):
-        input_frame = Frame(frame)
+        input_frame = tk.Frame(frame)
         input_frame.grid(column=0, row=0)
 
         # Open Report Button
-        self.open_report = Button(
+        self.open_report = tk.Button(
             input_frame,
             text="Open Lab Report\n in pdf viewer",
             height=2,
@@ -119,25 +118,25 @@ class Report(Frame):
         return subprocess.Popen("a-doc.pdf", shell=True)
 
 
-class Visualisation(Frame):
+class Visualisation(tk.Frame):
     def __init__(self, parent, controller):
         """
         Visualise the magnetic field generated from a loop of wire with
         the help of a GUI.
         """
-        Frame.__init__(self, parent)
+        tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = Label(
+        label = tk.Label(
             self, text="Magnetic Field Simulation of a Single Coil", font=TITLE_FONT
         )
         label.pack(side="top", fill="x", pady=10)
-        button = Button(
+        button = tk.Button(
             self,
             text="Go to Home Page",
             command=lambda: controller.show_frame(StartPage),
         )
         button.pack()
-        frame = Frame(self)  # Define main frame for the Mayavi GUI
+        frame = tk.Frame(self)  # Define main frame for the Mayavi GUI
         frame.pack()
         self.Inputs(frame)
 
@@ -150,31 +149,31 @@ class Visualisation(Frame):
         It contains all the Buttons, Labels and Text boxes
         """
         # Define child frame for the master
-        input_frame = Frame(frame)
+        input_frame = tk.Frame(frame)
         input_frame.grid(column=0, row=0)
 
         # Add Sliders
-        self.slR = Scale(input_frame, from_=1.0, to=5.0, orient=HORIZONTAL)
+        self.slR = tk.Scale(input_frame, from_=1.0, to=5.0, orient=tk.HORIZONTAL)
         self.slR.set(1.0)
         self.slR.grid(column=1, row=1)
-        self.slI = Scale(input_frame, from_=-5.0, to=5.0, orient=HORIZONTAL)
+        self.slI = tk.Scale(input_frame, from_=-5.0, to=5.0, orient=tk.HORIZONTAL)
         self.slI.set(1.0)
         self.slI.grid(column=1, row=2)
 
         # Plot sphere element Button
-        self.seed_sphere = Button(
+        self.seed_sphere = tk.Button(
             input_frame, text="PLOT with \nSphere element", command=self.sphere_el
         )
         self.seed_sphere.grid(column=2, row=6)
 
         # Plot plane element Button
-        self.seed_plane = Button(
+        self.seed_plane = tk.Button(
             input_frame, text="PLOT with \nPlane element", command=self.plane_el
         )
         self.seed_plane.grid(column=1, row=6)
 
         # Plot line element Button
-        self.plot_button = Button(
+        self.plot_button = tk.Button(
             input_frame,
             text=" PLOT with \nLine element",
             height=2,
@@ -187,49 +186,57 @@ class Visualisation(Frame):
         import tkinter.font as tkFont
 
         text_size = tkFont.Font(family="Times New Roman", size=12)
-        text = Text(input_frame, width=58, height=6, font=text_size)
-        text.config(state=NORMAL)
+        text = tk.Text(input_frame, width=58, height=6, font=text_size)
+        text.config(state=tk.NORMAL)
         text.config(bg="orange", fg="black")
         text.insert(
-            INSERT,
+            tk.INSERT,
             "Mayavi Visualisation Controls:\n \n-Left-click: On the visualisation"
             " element to show more field lines\n-Right-click and Drag: On the"
             " visualisation element to adjust its size\n-Left-click and Drag: On the"
             " visualisation element to move it inside the field\n-Scroll-up\down: To"
             " zoom in\out respectively",
         )
-        text.config(state=DISABLED)
+        text.config(state=tk.DISABLED)
         text.grid(column=0, row=8, columnspan=4)
 
         # Labels
-        self.labelR = Label(
-            input_frame, text="Radius R [m]:", justify=LEFT, anchor=W, relief=RIDGE
+        self.labelR = tk.Label(
+            input_frame,
+            text="Radius R [m]:",
+            justify=tk.LEFT,
+            anchor=tk.W,
+            relief=tk.RIDGE,
         )
         self.labelR.grid(column=0, row=1)
-        self.labelI = Label(
-            input_frame, text="Current I [A]:", justify=LEFT, anchor=W, relief=RIDGE
+        self.labelI = tk.Label(
+            input_frame,
+            text="Current I [A]:",
+            justify=tk.LEFT,
+            anchor=tk.W,
+            relief=tk.RIDGE,
         )
         self.labelI.grid(column=0, row=2)
-        self.labelbuttons = Label(
+        self.labelbuttons = tk.Label(
             input_frame,
             text="Volume Elements to Visualise the Field :",
-            justify=LEFT,
-            relief=RIDGE,
+            justify=tk.LEFT,
+            relief=tk.RIDGE,
         )
-        self.labelbuttons.grid(column=0, row=4, columnspan=1, sticky=W)
+        self.labelbuttons.grid(column=0, row=4, columnspan=1, sticky=tk.W)
 
         # Blank Lines
-        self.emptylabel0 = Label(input_frame, text=" ", justify=LEFT)
+        self.emptylabel0 = tk.Label(input_frame, text=" ", justify=tk.LEFT)
         self.emptylabel0.grid(column=0, row=3)
-        self.emptylabel1 = Label(input_frame, text=" ", justify=LEFT)
+        self.emptylabel1 = tk.Label(input_frame, text=" ", justify=tk.LEFT)
         self.emptylabel1.grid(column=0, row=5)
-        self.emptylabel3 = Label(input_frame, text=" ", justify=LEFT)
+        self.emptylabel3 = tk.Label(input_frame, text=" ", justify=tk.LEFT)
         self.emptylabel3.grid(column=0, row=7, columnspan=4)
 
         # Information Buttons
-        self.info1Text = StringVar()
+        self.info1Text = tk.StringVar()
         self.info1Text.set("  i  ")
-        self.info1 = Label(input_frame, textvariable=self.info1Text, relief=RIDGE)
+        self.info1 = tk.Label(input_frame, textvariable=self.info1Text, relief=tk.RIDGE)
         self.info1.grid(column=2, row=4)
 
         # Add a tooltip to a widget.
@@ -247,9 +254,9 @@ class Visualisation(Frame):
         )
 
         ##################################################################
-        self.info2Text = StringVar()
+        self.info2Text = tk.StringVar()
         self.info2Text.set("  i  ")
-        self.info2 = Label(input_frame, textvariable=self.info2Text, relief=RIDGE)
+        self.info2 = tk.Label(input_frame, textvariable=self.info2Text, relief=tk.RIDGE)
         self.info2.grid(column=2, row=2)
 
         # Add a tooltip to a widget.
@@ -266,9 +273,9 @@ class Visualisation(Frame):
         )
 
         #################################################################
-        self.info4Text = StringVar()
+        self.info4Text = tk.StringVar()
         self.info4Text.set("  i  ")
-        self.info4 = Label(input_frame, textvariable=self.info4Text, relief=RIDGE)
+        self.info4 = tk.Label(input_frame, textvariable=self.info4Text, relief=tk.RIDGE)
         self.info4.grid(column=2, row=1)
 
         # Add a tooltip to a widget.
@@ -486,5 +493,9 @@ class Visualisation(Frame):
 #                           command=lambda: controller.show_frame(StartPage))
 #        button.pack()
 
-app = Menu()
-app.mainloop()
+if __name__ == "__main__":
+    root = tk.Tk()
+    main = Menu(root)
+    main.pack(side="top", fill="both", expand=True)
+    root.wm_geometry("550x400")
+    root.mainloop()
