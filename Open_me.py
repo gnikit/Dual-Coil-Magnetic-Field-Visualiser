@@ -368,7 +368,7 @@ class Visualisation(Page):
         mlab.view(azimuth=42, elevation=73, distance=104)
         mlab.show()
 
-    def eval_magnetic_field(self, figsize=(500, 500), normalise=False):
+    def eval_magnetic_field(self, normalise=False):
         R = float(self.e_R.get())
         I = float(self.e_I.get())
         if I == 0:
