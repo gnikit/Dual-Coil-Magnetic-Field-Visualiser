@@ -22,6 +22,8 @@ class Page(tk.Frame):
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, *args, **kwargs)
 
+        self.frame = tk.Frame(self)
+
     def show(self):
         self.lift()
 
@@ -72,9 +74,8 @@ class Visualisation(Page):
             self, text="Magnetic Field Streamlines of a Single Coil", font=self.bold20
         ).pack(side="top", fill="x", pady=10)
 
-        frame = tk.Frame(self)  # Define main frame for the Mayavi GUI
-        frame.pack()
-        self.Inputs(frame)
+        self.frame.pack()
+        self.Inputs(self.frame)
 
     def Inputs(self, frame):
         # Define child frame for the master
