@@ -17,26 +17,39 @@ from TkInterToolTip import ToolTip
 # link:http://stackoverflow.com/questions/14817210/using-buttons-in-tkinter-to-navigate-to-different-pages-of-the-application
 ####################################################
 
-TITLE_FONT = ("Times New Roman", 18, "bold")
+
+class Page(tk.Frame):
+    def __init__(self, *args, **kwargs):
+        tk.Frame.__init__(self, *args, **kwargs)
+
+    def show(self):
+        self.lift()
+
+    def quit(self):
+        self.root.quit()
+        self.root.destroy()
+
+    def custom_font(self, frame, **kwargs):
+        return tkFont.Font(frame, **kwargs)
 
 
 class Menu(tk.Frame):
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, *args, **kwargs)
+
+        self.pack(side="top", fill="both", expand=True)
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        # use only a single page
+        vis = Visualisation(self)
+        vis.grid(row=0, column=0, sticky="nsew")
+        vis.show()
+
+        # Disable multipage menu
         # the container is where we'll stack a bunch of frames
         # on top of each other, then the one we want visible
         # will be raised above the others
-        container = tk.Frame(self)
-        container.pack(side="top", fill="both", expand=True)
-        container.grid_rowconfigure(0, weight=1)
-        container.grid_columnconfigure(0, weight=1)
-
-        # use only a single page
-        frame = Visualisation(container, self)
-        frame.grid(row=0, column=0, sticky="nsew")
-        frame.tkraise()
-
-        # Disable multipage menu
         # self.frames = {}
         # for F in (StartPage, Visualisation, Report):
         #     frame = F(container, self)
@@ -47,95 +60,18 @@ class Menu(tk.Frame):
         #     frame.grid(row=0, column=0, sticky="nsew")
         # self.show_frame(StartPage)
 
-    def show_frame(self, c):
-        """Show a frame for the given class"""
-        frame = self.frames[c]
-        frame.tkraise()
 
-    def quit(self):
-        self.root.quit()
-        self.root.destroy()
+class Visualisation(Page):
+    def __init__(self, *args, **kwargs):
+        Page.__init__(self, *args, **kwargs)
 
+        # Custom fonts
+        self.bold20 = self.custom_font(self, size=16, weight=tkFont.BOLD)
 
-class StartPage(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-        label = tk.Label(self, text="Home Page", font=TITLE_FONT)
-        # img = PhotoImage(file="1.gif")             #Image in the background
-        # container_lbl = Label(self, image = img)    #not working for some reason
-        container_lbl = tk.Label(self, bg="orange")
-        container_lbl.pack(side="bottom", fill="both", expand=True)
-        label.pack(side="top", fill="x", pady=10)
-
-        button1 = tk.Button(
-            self,
-            text="Go to Magnetic Field Simulation",
-            command=lambda: controller.show_frame(Visualisation),
-        )
-        button2 = tk.Button(
-            self, text="Go to Lab Report", command=lambda: controller.show_frame(Report)
-        )
-        # button3 = Button(self, text="Go to Page Three",
-        #                    command=lambda: controller.show_frame(PageThree))
-        button1.pack()
-        button2.pack()
-        # button3.pack()
-
-
-class Report(tk.Frame):
-    def __init__(self, parent, controller):
-        """
-        Opens the lab report.
-        """
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
-        label = tk.Label(self, text="Lab Report Tab", font=TITLE_FONT)
-        label.pack(side="top", fill="x", pady=10)
-        button = tk.Button(
-            self,
-            text="Go to Home Page",
-            command=lambda: controller.show_frame(StartPage),
-        )
-        button.pack()
-        frame = tk.Frame(self)
-        frame.pack()
-        self.Inputs(frame)
-        container_lbl = tk.Label(self, bg="orange")
-        container_lbl.pack(side="bottom", fill="both", expand=True)
-
-    def Inputs(self, frame):
-        input_frame = tk.Frame(frame)
-        input_frame.grid(column=0, row=0)
-
-        # Open Report Button
-        self.open_report = tk.Button(
-            input_frame,
-            text="Open Lab Report\n in pdf viewer",
-            height=2,
-            fg="red",
-            command=self.open_file,
-        )
-        self.open_report.grid(column=0, row=6)
-
-    def open_file(self):
-        return subprocess.Popen("a-doc.pdf", shell=True)
-
-
-class Visualisation(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.controller = controller
         tk.Label(
-            self, text="Magnetic Field Streamlines of a Single Coil", font=TITLE_FONT
+            self, text="Magnetic Field Streamlines of a Single Coil", font=self.bold20
         ).pack(side="top", fill="x", pady=10)
 
-        # button = tk.Button(
-        #     self,
-        #     text="Go to Home Page",
-        #     command=lambda: controller.show_frame(StartPage),
-        # )
-        # button.pack()
         frame = tk.Frame(self)  # Define main frame for the Mayavi GUI
         frame.pack()
         self.Inputs(frame)
