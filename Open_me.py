@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# Ioannis Nikiteas, 2015, Royal Holloway University of London
-# 3D Simulation of an EM field
 import sys
 import os
 import subprocess
@@ -9,6 +6,8 @@ import tkinter as tk
 from mayavi import mlab
 from scipy import special
 from tkinter import messagebox as msg
+import tkinter.font as tkFont
+from tkinter.ttk import Combobox
 
 # Externally sourced functionality for TkInter Widgets
 from TkInterToolTip import ToolTip
@@ -32,21 +31,26 @@ class Menu(tk.Frame):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
-        self.frames = {}
-        for F in (StartPage, Visualisation, Report):
-            framee = F(container, self)
-            self.frames[F] = framee
-            # put all of the pages in the same location;
-            # the one on the top of the stacking order
-            # will be the one that is visible.
-            framee.grid(row=0, column=0, sticky="nsew")
+        # use only a single page
+        frame = Visualisation(container, self)
+        frame.grid(row=0, column=0, sticky="nsew")
+        frame.tkraise()
 
-        self.show_frame(StartPage)
+        # Disable multipage menu
+        # self.frames = {}
+        # for F in (StartPage, Visualisation, Report):
+        #     frame = F(container, self)
+        #     self.frames[F] = frame
+        #     # put all of the pages in the same location;
+        #     # the one on the top of the stacking order
+        #     # will be the one that is visible.
+        #     frame.grid(row=0, column=0, sticky="nsew")
+        # self.show_frame(StartPage)
 
     def show_frame(self, c):
         """Show a frame for the given class"""
-        framee = self.frames[c]
-        framee.tkraise()
+        frame = self.frames[c]
+        frame.tkraise()
 
     def quit(self):
         self.root.quit()
@@ -120,73 +124,84 @@ class Report(tk.Frame):
 
 class Visualisation(tk.Frame):
     def __init__(self, parent, controller):
-        """
-        Visualise the magnetic field generated from a loop of wire with
-        the help of a GUI.
-        """
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = tk.Label(
-            self, text="Magnetic Field Simulation of a Single Coil", font=TITLE_FONT
-        )
-        label.pack(side="top", fill="x", pady=10)
-        button = tk.Button(
-            self,
-            text="Go to Home Page",
-            command=lambda: controller.show_frame(StartPage),
-        )
-        button.pack()
+        tk.Label(
+            self, text="Magnetic Field Streamlines of a Single Coil", font=TITLE_FONT
+        ).pack(side="top", fill="x", pady=10)
+
+        # button = tk.Button(
+        #     self,
+        #     text="Go to Home Page",
+        #     command=lambda: controller.show_frame(StartPage),
+        # )
+        # button.pack()
         frame = tk.Frame(self)  # Define main frame for the Mayavi GUI
         frame.pack()
         self.Inputs(frame)
 
     def Inputs(self, frame):
-        """
-        Child to: Tk
-        ________________________________________________
-
-        Inputs method structures the GUI.
-        It contains all the Buttons, Labels and Text boxes
-        """
         # Define child frame for the master
         input_frame = tk.Frame(frame)
         input_frame.grid(column=0, row=0)
 
-        # Add Sliders
-        self.slR = tk.Scale(input_frame, from_=1.0, to=5.0, orient=tk.HORIZONTAL)
-        self.slR.set(1.0)
-        self.slR.grid(column=1, row=1)
-        self.slI = tk.Scale(input_frame, from_=-5.0, to=5.0, orient=tk.HORIZONTAL)
-        self.slI.set(1.0)
-        self.slI.grid(column=1, row=2)
-
-        # Plot sphere element Button
-        self.seed_sphere = tk.Button(
-            input_frame, text="PLOT with \nSphere element", command=self.sphere_el
-        )
-        self.seed_sphere.grid(column=2, row=6)
-
-        # Plot plane element Button
-        self.seed_plane = tk.Button(
-            input_frame, text="PLOT with \nPlane element", command=self.plane_el
-        )
-        self.seed_plane.grid(column=1, row=6)
-
-        # Plot line element Button
-        self.plot_button = tk.Button(
-            input_frame,
-            text=" PLOT with \nLine element",
-            height=2,
-            fg="red",
-            command=self.line_el,
-        )
-        self.plot_button.grid(column=0, row=6)
+        self.buttons_and_entries(input_frame)
 
         # Text for Mayavi Scenes Controls
-        import tkinter.font as tkFont
+        self.description(input_frame)
 
+        # Labels
+        self.labels(input_frame)
+
+        # Add tooltips wideget
+        self.tool_tips(input_frame)
+
+        # Blank Lines
+        input_frame.grid_rowconfigure(5, minsize=20)
+        input_frame.grid_rowconfigure(7, minsize=10)
+        input_frame.grid_rowconfigure(9, minsize=30)
+
+    def buttons_and_entries(self, input_frame):
+        # Validate that entries receive real numbers
+        vcmd = (input_frame.register(self.validate), "%P")
+        dval1 = tk.StringVar(input_frame, value="1.0")  # default value
+        dval2 = tk.StringVar(input_frame, value="1.0")  # default value
+        # Add Entry widgets
+        # @note do not compound .grid on Entry, because it stores a None
+        self.e_R = tk.Entry(
+            input_frame, textvariable=dval1, validate="key", validatecommand=vcmd
+        )
+        self.e_R.grid(column=1, row=1, sticky="ew")
+        self.e_I = tk.Entry(
+            input_frame, textvariable=dval2, validate="key", validatecommand=vcmd
+        )
+        self.e_I.grid(column=1, row=2, sticky="ew")
+
+        # Plot sphere element Button
+        glyphs = ("line", "plane", "sphere")
+        self.cb = Combobox(input_frame, values=glyphs, state="readonly")
+        self.cb.grid(column=1, row=3, sticky="ew")
+
+        b_plot = tk.Button(input_frame, text="Plot", command=self.plot_field)
+        b_plot.grid(column=0, row=6, sticky="ew")
+
+        # Bottom row buttons
+        tk.Button(
+            input_frame,
+            text="Open Report",
+            height=1,
+            # anchor=tk.W,
+            command=self.open_file,
+        ).grid(column=0, row=10)
+
+        tk.Button(input_frame, text="Quit", height=1, command=self.quit).grid(
+            column=3, row=10
+        )
+
+    @staticmethod
+    def description(input_frame):
         text_size = tkFont.Font(family="Times New Roman", size=12)
-        text = tk.Text(input_frame, width=58, height=6, font=text_size)
+        text = tk.Text(input_frame, width=58, height=8, font=text_size)
         text.config(state=tk.NORMAL)
         text.config(bg="orange", fg="black")
         text.insert(
@@ -200,48 +215,43 @@ class Visualisation(tk.Frame):
         text.config(state=tk.DISABLED)
         text.grid(column=0, row=8, columnspan=4)
 
-        # Labels
-        self.labelR = tk.Label(
+    @staticmethod
+    def labels(input_frame):
+        tk.Label(
             input_frame,
-            text="Radius R [m]:",
-            justify=tk.LEFT,
+            text="Radius R",
+            # justify=tk.LEFT,
             anchor=tk.W,
             relief=tk.RIDGE,
-        )
-        self.labelR.grid(column=0, row=1)
-        self.labelI = tk.Label(
-            input_frame,
-            text="Current I [A]:",
-            justify=tk.LEFT,
-            anchor=tk.W,
-            relief=tk.RIDGE,
-        )
-        self.labelI.grid(column=0, row=2)
-        self.labelbuttons = tk.Label(
-            input_frame,
-            text="Volume Elements to Visualise the Field :",
-            justify=tk.LEFT,
-            relief=tk.RIDGE,
-        )
-        self.labelbuttons.grid(column=0, row=4, columnspan=1, sticky=tk.W)
+        ).grid(column=0, row=1)
 
-        # Blank Lines
-        self.emptylabel0 = tk.Label(input_frame, text=" ", justify=tk.LEFT)
-        self.emptylabel0.grid(column=0, row=3)
-        self.emptylabel1 = tk.Label(input_frame, text=" ", justify=tk.LEFT)
-        self.emptylabel1.grid(column=0, row=5)
-        self.emptylabel3 = tk.Label(input_frame, text=" ", justify=tk.LEFT)
-        self.emptylabel3.grid(column=0, row=7, columnspan=4)
+        tk.Label(
+            input_frame,
+            text="Current I",
+            # justify=tk.LEFT,
+            anchor=tk.W,
+            relief=tk.RIDGE,
+        ).grid(column=0, row=2)
+
+        tk.Label(
+            input_frame,
+            text="Inspector",
+            # justify=tk.LEFT,
+            anchor=tk.W,
+            relief=tk.RIDGE,
+        ).grid(column=0, row=3)
+
+    @staticmethod
+    def tool_tips(input_frame):
 
         # Information Buttons
-        self.info1Text = tk.StringVar()
-        self.info1Text.set("  i  ")
-        self.info1 = tk.Label(input_frame, textvariable=self.info1Text, relief=tk.RIDGE)
-        self.info1.grid(column=2, row=4)
+        info1Text = tk.StringVar()
+        info1Text.set("  i  ")
+        info1 = tk.Label(input_frame, textvariable=info1Text, relief=tk.RIDGE)
+        info1.grid(column=2, row=3)
 
-        # Add a tooltip to a widget.
-        self.infoToolTip = ToolTip(
-            self.info1,
+        infoToolTip = ToolTip(
+            info1,
             msg=(
                 "+Using different geometric structures as unit elements\n of the"
                 " magnetic field. Click and Drag the element to visualise the"
@@ -253,15 +263,14 @@ class Visualisation(tk.Frame):
             delay=0,
         )
 
-        ##################################################################
-        self.info2Text = tk.StringVar()
-        self.info2Text.set("  i  ")
-        self.info2 = tk.Label(input_frame, textvariable=self.info2Text, relief=tk.RIDGE)
-        self.info2.grid(column=2, row=2)
+        info2Text = tk.StringVar()
+        info2Text.set("  i  ")
+        info2 = tk.Label(input_frame, textvariable=info2Text, relief=tk.RIDGE)
+        info2.grid(column=2, row=2)
 
         # Add a tooltip to a widget.
-        self.infoToolTip = ToolTip(
-            self.info2,
+        infoToolTip = ToolTip(
+            info2,
             msg=(
                 "+The DC current in Amperes flowing through the circular loop.\n+When"
                 " the current increases (absolute value),\n the magnetic field strength"
@@ -272,15 +281,14 @@ class Visualisation(tk.Frame):
             delay=0,
         )
 
-        #################################################################
-        self.info4Text = tk.StringVar()
-        self.info4Text.set("  i  ")
-        self.info4 = tk.Label(input_frame, textvariable=self.info4Text, relief=tk.RIDGE)
-        self.info4.grid(column=2, row=1)
+        info3Text = tk.StringVar()
+        info3Text.set("  i  ")
+        info3 = tk.Label(input_frame, textvariable=info3Text, relief=tk.RIDGE)
+        info3.grid(column=2, row=1)
 
         # Add a tooltip to a widget.
-        self.infoToolTip = ToolTip(
-            self.info4,
+        infoToolTip = ToolTip(
+            info3,
             msg=(
                 "+The radius R from the center of the circular loop in meters.\n+As R"
                 " increases the magnetic field strength increases too."
@@ -288,12 +296,15 @@ class Visualisation(tk.Frame):
             delay=0,
         )
 
+    @staticmethod
+    def open_file():
+        # TODO: make this use HTML
+        return subprocess.Popen("a-doc.pdf", shell=True)
+
     def sphere_el(self):
-        """
-        Visualising the magnetic field and using as a sphere as a volume
-        element to analyse the field and its magnetic field lines
-        """
-        field, fig = self.eval_magnetic_field()
+        mlab.close(all=True)
+        fig = mlab.figure(1, size=(500, 500), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
+        field = self.eval_magnetic_field()
         magnitude = mlab.pipeline.extract_vector_norm(field)
         contours = mlab.pipeline.iso_surface(
             magnitude,
@@ -314,10 +325,14 @@ class Visualisation(tk.Frame):
             colormap="jet",
             vmin=0,
             vmax=0.5,
+            seed_resolution=12,
         )
 
-        field_lines.stream_tracer.maximum_propagation = 150.0
-        field_lines.seed.widget.radius = 5.5
+        contours.actor.property.frontface_culling = True
+        contours.normals.filter.feature_angle = 90
+
+        field_lines.stream_tracer.maximum_propagation = 150
+        field_lines.seed.widget.radius = 4
         sc = mlab.scalarbar(
             field_lines, title="Field Strength [T]", orientation="vertical", nb_labels=4
         )
@@ -329,8 +344,9 @@ class Visualisation(tk.Frame):
         mlab.show()
 
     def plane_el(self):
-
-        field, fig = self.eval_magnetic_field()
+        mlab.close(all=True)
+        fig = mlab.figure(1, size=(500, 500), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
+        field = self.eval_magnetic_field()
         magnitude = mlab.pipeline.extract_vector_norm(field)
         contours = mlab.pipeline.iso_surface(
             magnitude,
@@ -353,6 +369,9 @@ class Visualisation(tk.Frame):
             vmax=0.5,
         )
 
+        contours.actor.property.frontface_culling = True
+        contours.normals.filter.feature_angle = 90
+
         field_lines.stream_tracer.maximum_propagation = 40.0
         field_lines.seed.widget.resolution = 20
         sc = mlab.scalarbar(
@@ -370,7 +389,9 @@ class Visualisation(tk.Frame):
         Function that uses a line element to "look through"
         the magnetic field
         """
-        field, fig = self.eval_magnetic_field()
+        mlab.close(all=True)
+        fig = mlab.figure(1, size=(500, 500), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
+        field = self.eval_magnetic_field()
         magnitude = mlab.pipeline.extract_vector_norm(field)
         contours = mlab.pipeline.iso_surface(
             magnitude,
@@ -392,6 +413,9 @@ class Visualisation(tk.Frame):
             vmin=0,
             vmax=0.5,
         )
+        contours.actor.property.frontface_culling = True
+        contours.normals.filter.feature_angle = 90
+        # fig.scene.axes.cone_radius = 0.1
 
         field_lines.stream_tracer.maximum_propagation = 150
         field_lines.seed.widget.resolution = 30
@@ -409,26 +433,18 @@ class Visualisation(tk.Frame):
         mlab.show()
 
     def eval_magnetic_field(self, figsize=(500, 500), normalise=False):
-        R = float(self.slR.get())
-        I = float(self.slI.get())
+        R = float(self.e_R.get())
+        I = float(self.e_I.get())
         if I == 0:
             return msg.showwarning(
                 "WARNING:", "When I=0, \n There is no magnetic field generated"
             )
 
-        x, y, z = [
-            i.astype(np.float32)
-            for i in np.ogrid[-20:20:200j, -20:20:200j, -20:20:200j]
-        ]
+        x, y, z = np.ogrid[-20:20:200j, -20:20:200j, -20:20:200j]
 
         rho = np.sqrt(x ** 2 + y ** 2)
-        # Polar decomposition
-        x_trans = x / rho  # cos(a) term
-        y_trans = y / rho  # sin(a) term
-        # Free memory early
-        del x, y
 
-        mu = 4 * np.pi * 10.0 ** -7  # μ0 constant
+        mu = 4 * np.pi * 10.0 ** (-7)  # μ0 constant
         Bz_norm_factor = 1
         Brho_norm_factor = 1
         if normalise:
@@ -454,44 +470,41 @@ class Visualisation(tk.Frame):
             / (rho * np.sqrt((R + rho) ** 2 + z ** 2))
             * (-K + (R ** 2 + rho ** 2 + z ** 2) / ((R - rho) ** 2 + z ** 2) * E)
         )
-        del E, K, z, rho
-        # On the axis of the coil we get a divided by zero. This returns a
-        # NaN, where the field is actually zero :
+        del E, K, z
+
+        # Just in case there is a div by zero at the origin
         Brho[np.isnan(Brho)] = 0
 
-        Bx, By = x_trans * Brho, y_trans * Brho
+        Bx, By = (x / rho) * Brho, (y / rho) * Brho
 
-        del x_trans, y_trans, Brho
-        mlab.close(all=True)
-        fig = mlab.figure(1, size=figsize, bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
+        del Brho
 
-        field = mlab.pipeline.vector_field(Bx, By, Bz)
+        field = mlab.pipeline.vector_field(Bx, By, Bz, name="B field")
         del Bx, By, Bz
 
-        return (field, fig)
+        return field
 
+    def plot_field(self):
+        if self.cb.get() == "line":
+            return self.line_el()
+        elif self.cb.get() == "plane":
+            return self.plane_el()
+        elif self.cb.get() == "sphere":
+            return self.sphere_el()
+        else:
+            return
 
-# class PageTwo(Frame):
-#
-#    def __init__(self, parent, controller):
-#        Frame.__init__(self, parent)
-#        self.controller = controller
-#        label = Label(self, text="LaTex Lab Report", font=TITLE_FONT)
-#        label.pack(side="top", fill="x", pady=10)
-#        button = Button(self, text="Go to Home Page",
-#                           command=lambda: controller.show_frame(StartPage))
-#        button.pack()
+    @staticmethod
+    def validate(value_if_allowed):
+        if value_if_allowed:
+            try:
+                float(value_if_allowed)
+                return True
+            except ValueError:
+                return False
+        else:
+            return False
 
-# class PageThree(Frame):
-#
-#    def __init__(self, parent, controller):
-#        Frame.__init__(self, parent)
-#        self.controller = controller
-#        label = Label(self, text="This is page 3", font=TITLE_FONT)
-#        label.pack(side="top", fill="x", pady=10)
-#        button = Button(self, text="Go to the start page",
-#                           command=lambda: controller.show_frame(StartPage))
-#        button.pack()
 
 if __name__ == "__main__":
     root = tk.Tk()
