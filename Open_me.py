@@ -13,8 +13,11 @@ from PIL import ImageTk, Image
 # Externally sourced functionality for TkInter Widgets
 from TkInterToolTip import ToolTip
 
+# TODO: convert report to HTML
+# TODO: Add documentation for physics https://journals.aps.org/pra/pdf/10.1103/PhysRevA.35.1535
+
 #####################################################
-# Menu Externally sourced, supplied by: Bryan Oakley
+# Multipage tkinter menu implementation
 # link:http://stackoverflow.com/questions/14817210/using-buttons-in-tkinter-to-navigate-to-different-pages-of-the-application
 ####################################################
 
@@ -36,7 +39,7 @@ class Page(tk.Frame):
         return tkFont.Font(frame, **kwargs)
 
 
-class Menu(tk.Frame):
+class App(tk.Frame):
     def __init__(self, *args, **kwargs):
         tk.Frame.__init__(self, *args, **kwargs)
 
@@ -454,7 +457,14 @@ if __name__ == "__main__":
     root.tk.call("source", "themes/sun-valley/sun-valley.tcl")
     root.tk.call("set_theme", "light")
 
-    main = Menu(root)
+    main = App(root)
     main.pack(side="top", fill="both", expand=True)
-    root.wm_geometry("550x400")
+
+    # Set a minsize for the window, and place it in the middle
+    root.update()
+    root.minsize(root.winfo_width(), root.winfo_height())
+    x_cordinate = int((root.winfo_screenwidth() / 2) - (root.winfo_width() / 2))
+    y_cordinate = int((root.winfo_screenheight() / 2) - (root.winfo_height() / 2))
+    # root.geometry("+{}+{}".format(x_cordinate, y_cordinate))
+
     root.mainloop()
