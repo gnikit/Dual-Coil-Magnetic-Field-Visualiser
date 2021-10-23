@@ -6,8 +6,9 @@ import tkinter as tk
 from mayavi import mlab
 from scipy import special
 from tkinter import messagebox as msg
+from tkinter import ttk
 import tkinter.font as tkFont
-from tkinter.ttk import Combobox
+from PIL import ImageTk, Image
 
 # Externally sourced functionality for TkInter Widgets
 from TkInterToolTip import ToolTip
@@ -28,8 +29,8 @@ class Page(tk.Frame):
         self.lift()
 
     def quit(self):
-        self.root.quit()
-        self.root.destroy()
+        self.frame.quit()
+        self.frame.destroy()
 
     def custom_font(self, frame, **kwargs):
         return tkFont.Font(frame, **kwargs)
@@ -101,90 +102,94 @@ class Visualisation(Page):
     def buttons_and_entries(self, input_frame):
         # Validate that entries receive real numbers
         vcmd = (input_frame.register(self.validate), "%P")
-        dval1 = tk.StringVar(input_frame, value="1.0")  # default value
-        dval2 = tk.StringVar(input_frame, value="1.0")  # default value
         # Add Entry widgets
         # @note do not compound .grid on Entry, because it stores a None
-        self.e_R = tk.Entry(
-            input_frame, textvariable=dval1, validate="key", validatecommand=vcmd
-        )
-        self.e_R.grid(column=1, row=1, sticky="ew")
-        self.e_I = tk.Entry(
-            input_frame, textvariable=dval2, validate="key", validatecommand=vcmd
-        )
-        self.e_I.grid(column=1, row=2, sticky="ew")
+        self.e_R = ttk.Entry(input_frame, validate="key", validatecommand=vcmd)
+        self.e_R.insert(0, "1.0")
+        self.e_R.grid(column=1, row=1, padx=5, pady=(0, 5), sticky="ew")
+
+        self.e_I = ttk.Entry(input_frame, validate="key", validatecommand=vcmd)
+        self.e_I.grid(column=1, row=2, padx=5, pady=(0, 5), sticky="ew")
+        self.e_I.insert(0, "1.0")
 
         # Plot sphere element Button
-        glyphs = ("line", "plane", "sphere")
-        self.cb = Combobox(input_frame, values=glyphs, state="readonly")
-        self.cb.grid(column=1, row=3, sticky="ew")
+        glyphs = ("sphere", "plane", "line")
+        self.cb = ttk.Combobox(input_frame, values=glyphs, state="readonly")
+        self.cb.current(0)
+        self.cb.grid(column=1, row=3, padx=5, pady=5, sticky="ew")
 
-        b_plot = tk.Button(input_frame, text="Plot", command=self.plot_field)
+        b_plot = ttk.Button(
+            input_frame, text="Plot", command=self.plot_field, style="Accent.TButton"
+        )
         b_plot.grid(column=0, row=6, sticky="ew")
 
         # Bottom row buttons
-        tk.Button(
+        ttk.Button(
             input_frame,
             text="Open Report",
-            height=1,
             # anchor=tk.W,
             command=self.open_file,
+            style="Toggle.TButton",
         ).grid(column=0, row=10)
 
-        tk.Button(input_frame, text="Quit", height=1, command=self.quit).grid(
-            column=3, row=10
-        )
+        ttk.Button(
+            input_frame, text="Quit", command=self.quit, style="Toggle.TButton"
+        ).grid(column=3, row=10)
 
-    @staticmethod
-    def description(input_frame):
-        text_size = tkFont.Font(family="Times New Roman", size=12)
-        text = tk.Text(input_frame, width=58, height=8, font=text_size)
-        text.config(state=tk.NORMAL)
-        text.config(bg="orange", fg="black")
-        text.insert(
-            tk.INSERT,
-            "Mayavi Visualisation Controls:\n \n-Left-click: On the visualisation"
-            " element to show more field lines\n-Right-click and Drag: On the"
-            " visualisation element to adjust its size\n-Left-click and Drag: On the"
-            " visualisation element to move it inside the field\n-Scroll-up\down: To"
-            " zoom in\out respectively",
-        )
-        text.config(state=tk.DISABLED)
-        text.grid(column=0, row=8, columnspan=4)
+    def description(self, input_frame):
+        sep = ttk.Separator(input_frame)
+        sep.grid(row=7, column=0, padx=(10, 10), pady=20, columnspan=4, sticky="ew")
+
+        desc_frame = ttk.LabelFrame(input_frame, text="Mayavi Visualisation Controls")
+        desc_frame.grid(column=0, row=8, ipadx=10, ipady=10, columnspan=4)
+
+        ttk.Label(
+            desc_frame,
+            text="\n"
+            "-i: Enable\Disable glyph widget\n"
+            "-Left-click: On the visualisation element to show more field lines\n"
+            "-Right-click and Drag: On the visualisation element to adjust its size\n"
+            "-Left-click and Drag: On the visualisation element to move it inside the field\n"
+            "-Scroll-up\down: To zoom in\out respectively",
+            justify="left",
+            font=("-size", 8),
+        ).pack()
 
     @staticmethod
     def labels(input_frame):
-        tk.Label(
+        ttk.Label(
             input_frame,
             text="Radius R",
             # justify=tk.LEFT,
             anchor=tk.W,
-            relief=tk.RIDGE,
+            # relief=tk.RIDGE,
         ).grid(column=0, row=1)
 
-        tk.Label(
+        ttk.Label(
             input_frame,
             text="Current I",
             # justify=tk.LEFT,
             anchor=tk.W,
-            relief=tk.RIDGE,
+            # relief=tk.RIDGE,
         ).grid(column=0, row=2)
 
-        tk.Label(
+        ttk.Label(
             input_frame,
             text="Inspector",
             # justify=tk.LEFT,
             anchor=tk.W,
-            relief=tk.RIDGE,
+            # relief=tk.RIDGE,
         ).grid(column=0, row=3)
 
     @staticmethod
     def tool_tips(input_frame):
 
+        # Info logo image
+        logo = ImageTk.PhotoImage(Image.open("assets/info_icon.png"))
+
         # Information Buttons
-        info1Text = tk.StringVar()
-        info1Text.set("  i  ")
-        info1 = tk.Label(input_frame, textvariable=info1Text, relief=tk.RIDGE)
+        info1 = tk.Label(input_frame, image=logo)
+        info1.image = logo
         info1.grid(column=2, row=3)
 
         infoToolTip = ToolTip(
@@ -200,9 +205,8 @@ class Visualisation(Page):
             delay=0,
         )
 
-        info2Text = tk.StringVar()
-        info2Text.set("  i  ")
-        info2 = tk.Label(input_frame, textvariable=info2Text, relief=tk.RIDGE)
+        info2 = tk.Label(input_frame, image=logo)
+        info2.image = logo
         info2.grid(column=2, row=2)
 
         # Add a tooltip to a widget.
@@ -217,10 +221,8 @@ class Visualisation(Page):
             ),
             delay=0,
         )
-
-        info3Text = tk.StringVar()
-        info3Text.set("  i  ")
-        info3 = tk.Label(input_frame, textvariable=info3Text, relief=tk.RIDGE)
+        info3 = ttk.Label(input_frame, image=logo)
+        info3.image = logo
         info3.grid(column=2, row=1)
 
         # Add a tooltip to a widget.
@@ -445,6 +447,13 @@ class Visualisation(Page):
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.title("Magnetic Field Visualiser")
+    root.wm_geometry("550x450")
+
+    # Set the theme
+    root.tk.call("source", "themes/sun-valley/sun-valley.tcl")
+    root.tk.call("set_theme", "light")
+
     main = Menu(root)
     main.pack(side="top", fill="both", expand=True)
     root.wm_geometry("550x400")
