@@ -1,10 +1,5 @@
-import sys
-import os
 import subprocess
-import numpy as np
 import tkinter as tk
-from mayavi import mlab
-from scipy import special
 from tkinter import messagebox as msg
 from tkinter import ttk
 import tkinter.font as tkFont
@@ -12,6 +7,7 @@ from PIL import ImageTk, Image
 
 # Externally sourced functionality for TkInter Widgets
 from TkInterToolTip import ToolTip
+from magnetic_field import MagneticField
 
 # TODO: convert report to HTML
 # TODO: Add documentation for physics https://journals.aps.org/pra/pdf/10.1103/PhysRevA.35.1535
@@ -255,196 +251,13 @@ class Visualisation(Page):
         # TODO: make this use HTML
         return subprocess.Popen("a-doc.pdf", shell=True)
 
-    def sphere_el(self):
-        mlab.close(all=True)
-        fig = mlab.figure(1, size=(500, 500), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        field = self.eval_magnetic_field()
-        magnitude = mlab.pipeline.extract_vector_norm(field)
-        contours = mlab.pipeline.iso_surface(
-            magnitude,
-            contours=3,
-            transparent=True,
-            opacity=0.6,
-            colormap="YlGnBu",
-            vmin=0,
-            vmax=0.5,
-        )
-
-        field_lines = mlab.pipeline.streamline(
-            magnitude,
-            seedtype="sphere",
-            integration_direction="both",
-            transparent=True,
-            opacity=0.3,
-            colormap="jet",
-            vmin=0,
-            vmax=0.5,
-            seed_resolution=12,
-        )
-
-        contours.actor.property.frontface_culling = True
-        contours.normals.filter.feature_angle = 90
-
-        field_lines.stream_tracer.maximum_propagation = 150
-        field_lines.seed.widget.radius = 4
-        sc = mlab.scalarbar(
-            field_lines, title="Field Strength [T]", orientation="vertical", nb_labels=4
-        )
-        # horizontal and vertical position from left->right, bottom->top
-        sc.scalar_bar_representation.position = np.array([0.9, 0.1])
-        # width and height of colourbar
-        sc.scalar_bar_representation.position2 = np.array([0.1, 0.8])
-        mlab.view(azimuth=42, elevation=73, distance=104)
-        mlab.show()
-
-    def plane_el(self):
-        mlab.close(all=True)
-        fig = mlab.figure(1, size=(500, 500), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        field = self.eval_magnetic_field()
-        magnitude = mlab.pipeline.extract_vector_norm(field)
-        contours = mlab.pipeline.iso_surface(
-            magnitude,
-            transparent=True,
-            contours=3,
-            opacity=0.6,
-            colormap="YlGnBu",
-            vmin=0,
-            vmax=0.5,
-        )
-
-        field_lines = mlab.pipeline.streamline(
-            magnitude,
-            seedtype="plane",
-            integration_direction="both",
-            transparent=True,
-            opacity=0.3,
-            colormap="jet",
-            vmin=0,
-            vmax=0.5,
-        )
-
-        contours.actor.property.frontface_culling = True
-        contours.normals.filter.feature_angle = 90
-
-        field_lines.stream_tracer.maximum_propagation = 40.0
-        field_lines.seed.widget.resolution = 20
-        sc = mlab.scalarbar(
-            field_lines, title="Field Strength [T]", orientation="vertical", nb_labels=4
-        )
-        # horizontal and vertical position from left->right, bottom->top
-        sc.scalar_bar_representation.position = np.array([0.9, 0.1])
-        # width and height of colourbar
-        sc.scalar_bar_representation.position2 = np.array([0.1, 0.8])
-        mlab.view(azimuth=42, elevation=73, distance=104)
-        mlab.show()
-
-    def line_el(self):
-        """
-        Function that uses a line element to "look through"
-        the magnetic field
-        """
-        mlab.close(all=True)
-        fig = mlab.figure(1, size=(500, 500), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        field = self.eval_magnetic_field()
-        magnitude = mlab.pipeline.extract_vector_norm(field)
-        contours = mlab.pipeline.iso_surface(
-            magnitude,
-            transparent=True,
-            contours=3,
-            opacity=0.6,
-            colormap="YlGnBu",
-            vmin=0,
-            vmax=0.5,
-        )
-
-        field_lines = mlab.pipeline.streamline(
-            magnitude,
-            seedtype="line",
-            integration_direction="both",
-            transparent=True,
-            opacity=0.3,
-            colormap="jet",
-            vmin=0,
-            vmax=0.5,
-        )
-        contours.actor.property.frontface_culling = True
-        contours.normals.filter.feature_angle = 90
-        # fig.scene.axes.cone_radius = 0.1
-
-        field_lines.stream_tracer.maximum_propagation = 150
-        field_lines.seed.widget.resolution = 30
-        field_lines.seed.widget.point1 = [95, 100.5, 100]  # placing seed
-        field_lines.seed.widget.point2 = [105, 100.5, 100]
-
-        sc = mlab.scalarbar(
-            field_lines, title="Field Strength [T]", orientation="vertical", nb_labels=4
-        )
-        # horizontal and vertical position from left->right, bottom->top
-        sc.scalar_bar_representation.position = np.array([0.9, 0.1])
-        # width and height of colourbar
-        sc.scalar_bar_representation.position2 = np.array([0.1, 0.8])
-        mlab.view(azimuth=42, elevation=73, distance=104)
-        mlab.show()
-
-    def eval_magnetic_field(self, normalise=False):
-        R = float(self.e_R.get())
-        I = float(self.e_I.get())
-        if I == 0:
-            return msg.showwarning(
-                "WARNING:", "When I=0, \n There is no magnetic field generated"
-            )
-
-        x, y, z = np.ogrid[-20:20:200j, -20:20:200j, -20:20:200j]
-
-        rho = np.sqrt(x ** 2 + y ** 2)
-
-        mu = 4 * np.pi * 10.0 ** (-7)  # μ0 constant
-        Bz_norm_factor = 1
-        Brho_norm_factor = 1
-        if normalise:
-            Bz_norm_factor = mu / (2 * np.pi)
-            Brho_norm_factor = Bz_norm_factor / rho
-
-        E = special.ellipe(
-            (4 * R * rho) / ((R + rho) ** 2 + z ** 2)
-        )  # special ellipse E
-        K = special.ellipk(
-            (4 * R * rho) / ((R + rho) ** 2 + z ** 2)
-        )  # special ellipse K
-        Bz = (
-            I
-            * Bz_norm_factor
-            / ((np.sqrt((R + rho) ** 2 + z ** 2)))
-            * (K + (R ** 2 - rho ** 2 - z ** 2) / ((R - rho) ** 2 + z ** 2) * E)
-        )
-        Brho = (
-            I
-            * Brho_norm_factor
-            * z
-            / (rho * np.sqrt((R + rho) ** 2 + z ** 2))
-            * (-K + (R ** 2 + rho ** 2 + z ** 2) / ((R - rho) ** 2 + z ** 2) * E)
-        )
-        del E, K, z
-
-        # Just in case there is a div by zero at the origin
-        Brho[np.isnan(Brho)] = 0
-
-        Bx, By = (x / rho) * Brho, (y / rho) * Brho
-
-        del Brho
-
-        field = mlab.pipeline.vector_field(Bx, By, Bz, name="B field")
-        del Bx, By, Bz
-
-        return field
-
     def plot_field(self):
         if self.cb.get() == "line":
-            return self.line_el()
+            return MagneticField.line_el(float(self.e_R.get()), float(self.e_I.get()))
         elif self.cb.get() == "plane":
-            return self.plane_el()
+            return MagneticField.plane_el(float(self.e_R.get()), float(self.e_I.get()))
         elif self.cb.get() == "sphere":
-            return self.sphere_el()
+            return MagneticField.sphere_el(float(self.e_R.get()), float(self.e_I.get()))
         else:
             return
 
