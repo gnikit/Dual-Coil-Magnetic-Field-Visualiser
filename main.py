@@ -10,7 +10,7 @@ from TkInterToolTip import ToolTip
 from magnetic_field import MagneticField
 
 # TODO: convert report to HTML
-# TODO: Add documentation for physics https://journals.aps.org/pra/pdf/10.1103/PhysRevA.35.1535
+# TODO: make tooltips darktheme
 
 #####################################################
 # Multipage tkinter menu implementation
