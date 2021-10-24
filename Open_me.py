@@ -79,9 +79,18 @@ class Visualisation(Page):
         ).pack(side="top", fill="x", pady=10)
 
         self.frame.pack()
-        self.Inputs(self.frame)
 
-    def Inputs(self, frame):
+        self.e_R = None
+        self.e_I = None
+        self.cb = None
+
+        self.dark_theme = False
+        if self.tk.eval("return $theme") == "dark":
+            self.dark_theme = True
+
+        self.inputs(self.frame)
+
+    def inputs(self, frame):
         # Define child frame for the master
         input_frame = tk.Frame(frame)
         input_frame.grid(column=0, row=0)
@@ -119,7 +128,7 @@ class Visualisation(Page):
         glyphs = ("sphere", "plane", "line")
         self.cb = ttk.Combobox(input_frame, values=glyphs, state="readonly")
         self.cb.current(0)
-        self.cb.grid(column=1, row=3, padx=5, pady=5, sticky="ew")
+        self.cb.grid(column=1, row=3, padx=5, pady=(0, 5), sticky="ew")
 
         b_plot = ttk.Button(
             input_frame, text="Plot", command=self.plot_field, style="Accent.TButton"
@@ -139,7 +148,8 @@ class Visualisation(Page):
             input_frame, text="Quit", command=self.quit, style="Toggle.TButton"
         ).grid(column=3, row=10)
 
-    def description(self, input_frame):
+    @staticmethod
+    def description(input_frame):
         sep = ttk.Separator(input_frame)
         sep.grid(row=7, column=0, padx=(10, 10), pady=20, columnspan=4, sticky="ew")
 
@@ -184,11 +194,12 @@ class Visualisation(Page):
             # relief=tk.RIDGE,
         ).grid(column=0, row=3)
 
-    @staticmethod
-    def tool_tips(input_frame):
+    def tool_tips(self, input_frame):
 
         # Info logo image
         logo = ImageTk.PhotoImage(Image.open("assets/info_icon.png"))
+        if self.dark_theme:
+            logo = ImageTk.PhotoImage(Image.open("assets/info_icon_dark_theme.png"))
 
         # Information Buttons
         info1 = tk.Label(input_frame, image=logo)
@@ -449,13 +460,16 @@ class Visualisation(Page):
 
 
 if __name__ == "__main__":
+    THEME = "dark"
+
     root = tk.Tk()
     root.title("Magnetic Field Visualiser")
-    root.wm_geometry("550x450")
+    root.wm_geometry("550x460")
 
     # Set the theme
     root.tk.call("source", "themes/sun-valley/sun-valley.tcl")
-    root.tk.call("set_theme", "light")
+    root.tk.call("set_theme", THEME)
+    root.tk.call("set", "theme", THEME)  # for theme mode to be accessible inside App
 
     main = App(root)
     main.pack(side="top", fill="both", expand=True)
