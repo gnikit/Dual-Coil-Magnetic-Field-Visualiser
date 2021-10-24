@@ -35,7 +35,8 @@ class Page(tk.Frame):
         self.frame.quit()
         self.frame.destroy()
 
-    def custom_font(self, frame, **kwargs):
+    @staticmethod
+    def custom_font(frame, **kwargs):
         return tkFont.Font(frame, **kwargs)
 
 
