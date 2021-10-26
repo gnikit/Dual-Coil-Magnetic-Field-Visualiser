@@ -1,4 +1,3 @@
-import gc
 from typing import Tuple
 import numpy as np
 from mayavi import mlab
@@ -13,139 +12,80 @@ class MagneticField(object):
 
     @staticmethod
     def sphere_el(radius: float, current: float) -> None:
+        Lx = Ly = Lz = radius * 4
+        sp = 50j  # grid spacing (complex number for mgrid implies inclusive bound)
+        x, y, z = np.mgrid[-Lx:Lx:sp, -Ly:Ly:sp, -Lz:Lz:sp]
+        Bx, By, Bz = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
+
         fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        B = MagneticField.magnetic_field_single_coil(radius, current)
-        field = mlab.pipeline.vector_field(B[0], B[1], B[2], name="B field")
-        magnitude = mlab.pipeline.extract_vector_norm(field)
-        contours: IsoSurface = mlab.pipeline.iso_surface(
-            magnitude,
-            contours=3,
-            transparent=True,
-            opacity=0.6,
-            colormap="YlGnBu",
-            vmin=0,
-            vmax=0.5,
-        )
+        MagneticField.draw_coil(radius)
 
-        streamlines: Streamline = mlab.pipeline.streamline(
-            magnitude,
-            seedtype="sphere",
-            integration_direction="both",
-            transparent=True,
-            opacity=0.3,
-            colormap="jet",
-            vmin=0,
-            vmax=0.5,
-        )
+        objs = MagneticField.scene_setup(x, y, z, Bx, By, Bz, seedtype="sphere")
+        objs["streamlines"].seed.widget.phi_resolution = 10
+        objs["streamlines"].seed.widget.theta_resolution = 10
+        objs["streamlines"].seed.widget.radius = radius
 
-        contours.actor.property.frontface_culling = True
-        contours.normals.filter.feature_angle = 90
-
-        streamlines.stream_tracer.maximum_propagation = 150
-        streamlines.seed.widget.radius = 4
-        streamlines.seed.widget.seed_resolution = 12
-        MagneticField.style(streamlines)
-
-        del field, streamlines, contours, magnitude, B, fig
+        MagneticField.scene_style(objs)
 
     @staticmethod
     def plane_el(radius: float, current: float) -> None:
+        Lx = Ly = Lz = radius * 4
+        sp = 50j  # grid spacing (complex number for mgrid implies inclusive bound)
+        x, y, z = np.mgrid[-Lx:Lx:sp, -Ly:Ly:sp, -Lz:Lz:sp]
+        Bx, By, Bz = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
+
         fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        B = MagneticField.magnetic_field_single_coil(radius, current)
-        field = mlab.pipeline.vector_field(B[0], B[1], B[2], name="B field")
-        magnitude = mlab.pipeline.extract_vector_norm(field)
-        contours: IsoSurface = mlab.pipeline.iso_surface(
-            magnitude,
-            transparent=True,
-            contours=3,
-            opacity=0.6,
-            colormap="YlGnBu",
-            vmin=0,
-            vmax=0.5,
-        )
+        MagneticField.draw_coil(radius)
 
-        streamlines: Streamline = mlab.pipeline.streamline(
-            magnitude,
-            seedtype="plane",
-            integration_direction="both",
-            transparent=True,
-            opacity=0.3,
-            colormap="jet",
-            vmin=0,
-            vmax=0.5,
-        )
+        objs = MagneticField.scene_setup(x, y, z, Bx, By, Bz, seedtype="plane")
+        objs["streamlines"].stream_tracer.maximum_propagation = 40.0
+        objs["streamlines"].seed.widget.resolution = 20
+        objs["streamlines"].seed.widget.handle_size = 0.5
+        objs["streamlines"].seed.widget.representation = "outline"
 
-        contours.actor.property.frontface_culling = True
-        contours.normals.filter.feature_angle = 90
-
-        streamlines.stream_tracer.maximum_propagation = 40.0
-        streamlines.seed.widget.resolution = 20
-        streamlines.seed.widget.handle_size = 0.5
-        streamlines.seed.widget.representation = "outline"
-        MagneticField.style(contours)
-
-        # @note
-        # The garbage collection does not work for streamlines that results into
-        #  all the memory in the heap not being able to be freed
-        field.remove()
-
-        # streamlines.stream_tracer.remove_all_inputs
-        # streamlines.stream_tracer.remove_all_observers
-        # streamlines.remove()
-        # del streamlines
-        del field, magnitude, contours, B, fig
-        gc.collect()
+        MagneticField.scene_style(objs)
 
     @staticmethod
     def line_el(radius: float, current: float) -> None:
+        Lx = Ly = Lz = radius * 4
+        sp = 50j  # grid spacing (complex number for mgrid implies inclusive bound)
+        x, y, z = np.mgrid[-Lx:Lx:sp, -Ly:Ly:sp, -Lz:Lz:sp]
+        Bx, By, Bz = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
+
         fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        B = MagneticField.magnetic_field_single_coil(radius, current)
-        field = mlab.pipeline.vector_field(B[0], B[1], B[2], name="B field")
-        magnitude = mlab.pipeline.extract_vector_norm(field)
-        contours: IsoSurface = mlab.pipeline.iso_surface(
-            magnitude,
-            transparent=True,
-            contours=3,
-            opacity=0.6,
-            colormap="YlGnBu",
-            vmin=0,
-            vmax=0.5,
-        )
+        MagneticField.draw_coil(radius)
 
-        streamlines: Streamline = mlab.pipeline.streamline(
-            magnitude,
-            seedtype="line",
-            integration_direction="both",
-            transparent=True,
-            opacity=0.3,
-            colormap="jet",
-            vmin=0,
-            vmax=0.5,
-        )
-        contours.actor.property.frontface_culling = True
-        contours.normals.filter.feature_angle = 90
+        objs = MagneticField.scene_setup(x, y, z, Bx, By, Bz, seedtype="line")
+        objs["streamlines"].stream_tracer.maximum_propagation = 150
+        objs["streamlines"].seed.widget.resolution = 30
+        # objs["streamlines"].seed.widget.point1 = [95, 100.5, 100]  # placing seed
+        # objs["streamlines"].seed.widget.point2 = [105, 100.5, 100]
 
-        streamlines.stream_tracer.maximum_propagation = 150
-        streamlines.seed.widget.resolution = 30
-        streamlines.seed.widget.point1 = [95, 100.5, 100]  # placing seed
-        streamlines.seed.widget.point2 = [105, 100.5, 100]
-
-        MagneticField.style(contours)
-
-        del field, streamlines, contours, magnitude, B, fig
+        MagneticField.scene_style(objs)
 
     @staticmethod
-    def draw_circle(radius):
-        l = 200
+    def draw_coil(
+        radius: float,
+        centre: np.array = np.array([0, 0, 0]),
+        scale: np.array = np.array([1, 1, 1]),
+    ):
+        l = 40
         theta = np.linspace(0, 2 * np.pi, l)
-        y = radius * np.sin(theta)
-        x = radius * np.cos(theta)
-        z = np.zeros(l)
-        return mlab.points3d(x, y, z)
+        y = (radius * np.sin(theta) + centre[0]) * scale[0]
+        x = (radius * np.cos(theta) + centre[1]) * scale[1]
+        z = (np.zeros(l) + centre[2]) * scale[2]
+        return mlab.plot3d(
+            x, y, z, name="Coil", tube_radius=radius * 0.1, color=(0, 0, 1)
+        )
 
     @staticmethod
     def magnetic_field_single_coil(
-        radius: float, current: float, normalise: bool = False
+        x: np.ndarray,
+        y: np.ndarray,
+        z: np.ndarray,
+        radius: float,
+        current: float,
+        normalise: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Calculate the magnetic field of a single coil loop
@@ -158,7 +98,11 @@ class MagneticField(object):
             \left[-K(k^2) + E(k^2)\frac{R^2+\rho^2+z^2}{(R-\rho)^2+z^2}\right]
 
         where K and E are the elliptic integrals
+
         Args:
+            x (np.ndarray): generated by `np.mgrid`
+            y (np.ndarray): generated by `np.mgrid`
+            z (np.ndarray): generated by `np.mgrid`
             radius (float): radius of the coil
             current (float): current through the coil
             normalise (bool, optional): normalise field. Defaults to False.
@@ -173,14 +117,8 @@ class MagneticField(object):
             R = 1e-10
         if abs(current) < 1e-10:
             I = 1e-10
-        Lx = 20
-        Ly = 20
-        Lz = 20
 
-        x, y, z = np.ogrid[-Lx:Lx:200j, -Ly:Ly:200j, -Lz:Lz:200j]
         rho = np.sqrt(x ** 2 + y ** 2)
-        # theta = np.arctan(x/y)
-        # theta[y==0] = 0
 
         mu = 4 * np.pi * 10.0 ** (-7)  # μ0 constant
         Bz_norm_factor = 1
@@ -213,18 +151,64 @@ class MagneticField(object):
         Bz[np.isnan(Bz)] = 0
         Bz[np.isinf(Bz)] = 0
 
-        # Bx, By = np.cos(theta) * Brho, np.sin(theta) * Brho
         Bx, By = (x / rho) * Brho, (y / rho) * Brho
 
-        del Brho, E, K, x, y, z
+        del Brho, E, K
 
         return Bx, By, Bz
 
     @staticmethod
-    # @mlab.show
-    def style(streamlines, **kwargs) -> None:
+    def scene_setup(
+        x: np.ndarray,
+        y: np.ndarray,
+        z: np.ndarray,
+        Bx: np.ndarray,
+        By: np.ndarray,
+        Bz: np.ndarray,
+        seedtype: str,
+    ) -> dict:
+        field = mlab.pipeline.vector_field(x, y, z, Bx, By, Bz, name="B field")
+        magnitude = mlab.pipeline.extract_vector_norm(field)
+        contours: IsoSurface = mlab.pipeline.iso_surface(
+            magnitude,
+            contours=3,
+            transparent=True,
+            opacity=0.6,
+            colormap="YlGnBu",
+            # vmin=0,
+            # vmax=0.5,
+        )
+
+        streamlines: Streamline = mlab.pipeline.streamline(
+            magnitude,
+            seedtype=seedtype,
+            integration_direction="both",
+            transparent=True,
+            opacity=0.2,
+            colormap="jet",
+            # vmin=0,
+            # vmax=0.5,
+        )
+
+        contours.actor.property.frontface_culling = True
+        contours.normals.filter.feature_angle = 90
+
+        streamlines.stream_tracer.maximum_propagation = 150
+
+        pipeline_obj = {
+            "field": field,
+            "mag": magnitude,
+            "contours": contours,
+            "streamlines": streamlines,
+        }
+
+        return pipeline_obj
+
+    @staticmethod
+    @mlab.show
+    def scene_style(objs: dict, **kwargs) -> None:
         sc = mlab.scalarbar(
-            streamlines,
+            objs["streamlines"],
             title="Field\nStrength [T]",
             orientation="vertical",
             nb_labels=4,
@@ -238,8 +222,10 @@ class MagneticField(object):
         sc.title_text_property.font_size = 20
         sc.label_text_property.font_size = 20
         ax = mlab.axes()
-        mlab.view(azimuth=42, elevation=73, distance=104)
+        mlab.view(azimuth=42, elevation=73)
 
 
 if __name__ == "__main__":
-    MagneticField.line_el(1.0, 1.0)
+    MagneticField.sphere_el(1.0, 1.0)
+    MagneticField.plane_el(1.0, 0.1)
+    MagneticField.line_el(1.0, 0.1)
