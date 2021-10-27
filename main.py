@@ -6,11 +6,10 @@ import tkinter.font as tkFont
 from PIL import ImageTk, Image
 
 # Externally sourced functionality for TkInter Widgets
-from TkInterToolTip import ToolTip
+from tktooltip import ToolTip
 from magnetic_field import MagneticField
 
 # TODO: convert report to HTML
-# TODO: make tooltips darktheme
 
 #####################################################
 # Multipage tkinter menu implementation
