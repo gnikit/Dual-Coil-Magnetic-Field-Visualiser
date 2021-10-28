@@ -15,14 +15,14 @@ class MagneticField(object):
         Lx = Ly = Lz = radius * 4
         sp = 50j  # grid spacing (complex number for mgrid implies inclusive bound)
         x, y, z = np.mgrid[-Lx:Lx:sp, -Ly:Ly:sp, -Lz:Lz:sp]
-        Bx, By, Bz = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
+        B = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
 
         fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
         MagneticField.draw_coil(radius)
 
-        objs = MagneticField.scene_setup(x, y, z, Bx, By, Bz, seedtype="sphere")
-        objs["streamlines"].seed.widget.phi_resolution = 10
-        objs["streamlines"].seed.widget.theta_resolution = 10
+        objs = MagneticField.scene_setup(x, y, z, B[0], B[1], B[2], seedtype="sphere")
+        # objs["streamlines"].seed.widget.phi_resolution = 10
+        # objs["streamlines"].seed.widget.theta_resolution = 10
         objs["streamlines"].seed.widget.radius = radius
 
         MagneticField.scene_style(objs)
@@ -66,16 +66,23 @@ class MagneticField(object):
     @staticmethod
     def draw_coil(
         radius: float,
+        name="Coil",
+        color=(0, 0, 1),
         centre: np.array = np.array([0, 0, 0]),
         scale: np.array = np.array([1, 1, 1]),
     ):
         l = 40
         theta = np.linspace(0, 2 * np.pi, l)
-        y = (radius * np.sin(theta) + centre[0]) * scale[0]
-        x = (radius * np.cos(theta) + centre[1]) * scale[1]
+        y = ((radius * np.sin(theta)) + centre[0]) * scale[0]
+        x = ((radius * np.cos(theta)) + centre[1]) * scale[1]
         z = (np.zeros(l) + centre[2]) * scale[2]
         return mlab.plot3d(
-            x, y, z, name="Coil", tube_radius=radius * 0.1, color=(0, 0, 1)
+            x,
+            y,
+            z,
+            name=name,
+            tube_radius=radius * 0.1,
+            color=color,
         )
 
     @staticmethod
@@ -155,7 +162,7 @@ class MagneticField(object):
 
         del Brho, E, K
 
-        return Bx, By, Bz
+        return np.array([Bx, By, Bz])
 
     @staticmethod
     def scene_setup(
