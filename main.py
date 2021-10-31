@@ -252,11 +252,14 @@ class Visualisation(Page):
 
     def plot_field(self):
         if self.cb.get() == "line":
-            return MagneticField.line_el(float(self.e_R.get()), float(self.e_I.get()))
+            plot = MagneticField()
+            return plot.line_el(float(self.e_R.get()), float(self.e_I.get()))
         elif self.cb.get() == "plane":
-            return MagneticField.plane_el(float(self.e_R.get()), float(self.e_I.get()))
+            plot = MagneticField()
+            return plot.plane_el(float(self.e_R.get()), float(self.e_I.get()))
         elif self.cb.get() == "sphere":
-            return MagneticField.sphere_el(float(self.e_R.get()), float(self.e_I.get()))
+            plot = MagneticField()
+            return plot.sphere_el(float(self.e_R.get()), float(self.e_I.get()))
         else:
             return
 

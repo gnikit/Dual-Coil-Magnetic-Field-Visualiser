@@ -7,37 +7,30 @@ from scipy import special
 
 
 class MagneticField(object):
-    def __init__(self) -> None:
-        pass
+    def __init__(self, radius: float = 0.1, current: float = 1.0, spacing=50j) -> None:
+        self.radius = radius
+        self.current = current
+        self.Lx = self.radius * 4
+        self.Ly = self.radius * 4
+        self.Lz = self.radius * 4
+        self.sp = spacing  # grid spacing (complex number = inclusive bounds
 
-    @staticmethod
-    def sphere_el(radius: float, current: float) -> None:
-        Lx = Ly = Lz = radius * 4
-        sp = 50j  # grid spacing (complex number for mgrid implies inclusive bound)
-        x, y, z = np.mgrid[-Lx:Lx:sp, -Ly:Ly:sp, -Lz:Lz:sp]
-        B = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
+    def sphere_el(self, radius: float, current: float) -> None:
 
-        fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        MagneticField.draw_coil(radius)
+        B = self.compute_all_coils(radius, current)
 
-        objs = MagneticField.scene_setup(x, y, z, B[0], B[1], B[2], seedtype="sphere")
+        objs = self.scene_setup(B[0], B[1], B[2], seedtype="sphere")
         # objs["streamlines"].seed.widget.phi_resolution = 10
         # objs["streamlines"].seed.widget.theta_resolution = 10
         objs["streamlines"].seed.widget.radius = radius
 
         MagneticField.scene_style(objs)
 
-    @staticmethod
-    def plane_el(radius: float, current: float) -> None:
-        Lx = Ly = Lz = radius * 4
-        sp = 50j  # grid spacing (complex number for mgrid implies inclusive bound)
-        x, y, z = np.mgrid[-Lx:Lx:sp, -Ly:Ly:sp, -Lz:Lz:sp]
-        Bx, By, Bz = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
+    def plane_el(self, radius: float, current: float) -> None:
 
-        fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        MagneticField.draw_coil(radius)
+        B = self.compute_all_coils(radius, current)
 
-        objs = MagneticField.scene_setup(x, y, z, Bx, By, Bz, seedtype="plane")
+        objs = self.scene_setup(B[0], B[1], B[2], seedtype="plane")
         objs["streamlines"].stream_tracer.maximum_propagation = 40.0
         objs["streamlines"].seed.widget.resolution = 20
         objs["streamlines"].seed.widget.handle_size = 0.5
@@ -45,23 +38,66 @@ class MagneticField(object):
 
         MagneticField.scene_style(objs)
 
-    @staticmethod
-    def line_el(radius: float, current: float) -> None:
-        Lx = Ly = Lz = radius * 4
-        sp = 50j  # grid spacing (complex number for mgrid implies inclusive bound)
-        x, y, z = np.mgrid[-Lx:Lx:sp, -Ly:Ly:sp, -Lz:Lz:sp]
-        Bx, By, Bz = MagneticField.magnetic_field_single_coil(x, y, z, radius, current)
+    def line_el(self, radius: float, current: float) -> None:
 
-        fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
-        MagneticField.draw_coil(radius)
+        B = self.compute_all_coils(radius, current)
 
-        objs = MagneticField.scene_setup(x, y, z, Bx, By, Bz, seedtype="line")
+        objs = self.scene_setup(B[0], B[1], B[2], seedtype="line")
         objs["streamlines"].stream_tracer.maximum_propagation = 150
         objs["streamlines"].seed.widget.resolution = 30
         # objs["streamlines"].seed.widget.point1 = [95, 100.5, 100]  # placing seed
         # objs["streamlines"].seed.widget.point2 = [105, 100.5, 100]
 
         MagneticField.scene_style(objs)
+
+    def compute_all_coils(self, radius: float, current: float) -> np.ndarray:
+        self.__init__(radius, current)
+        x, y, z = self.get_grid("sparse")
+        # Get the grid spacing. Normally defined as a complex number since
+        # mgrid and ogrid need that for the interval to be inclusive on the upper
+        # bound.
+        sp = self.sp
+        if int(sp.imag) != 0:
+            sp = int(sp.imag)
+        else:
+            sp = int(sp.real)
+
+        h = radius / 2.0
+        fig = mlab.figure(1, size=(800, 600), bgcolor=(1, 1, 1), fgcolor=(0, 0, 0))
+
+        B = np.zeros((3, sp, sp, sp))
+        # TODO: add to a loop
+        B += MagneticField.magnetic_field_single_coil(
+            x,
+            y,
+            z,
+            radius,
+            current,
+            centre=[0, 0, +h],
+        )
+        B += MagneticField.magnetic_field_single_coil(
+            x,
+            y,
+            z,
+            radius,
+            current,
+            centre=[0, 0, -h],
+        )
+        MagneticField.draw_coil(
+            radius,
+            name="Coil 1",
+            color=(0, 0, 1),
+            centre=[0, 0, +h],
+        )
+        MagneticField.draw_coil(
+            radius,
+            name="Coil 2",
+            color=(0, 1, 1),
+            centre=[0, 0, -h],
+        )
+        del x, y, z
+
+        return B
 
     @staticmethod
     def draw_coil(
@@ -92,6 +128,8 @@ class MagneticField(object):
         z: np.ndarray,
         radius: float,
         current: float,
+        centre: np.array = np.array([0.0, 0.0, 0.0]),
+        scale: np.array = np.array([1.0, 1.0, 1.0]),
         normalise: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
@@ -124,6 +162,10 @@ class MagneticField(object):
             R = 1e-10
         if abs(current) < 1e-10:
             I = 1e-10
+
+        x = (x - centre[0]) * scale[0]
+        y = (y - centre[1]) * scale[1]
+        z = (z - centre[2]) * scale[2]
 
         rho = np.sqrt(x ** 2 + y ** 2)
 
@@ -159,26 +201,29 @@ class MagneticField(object):
         Bz[np.isinf(Bz)] = 0
 
         Bx, By = (x / rho) * Brho, (y / rho) * Brho
-
+        B = np.array([Bx, By, Bz])
         del Brho, E, K
 
-        return np.array([Bx, By, Bz])
+        return B
 
-    @staticmethod
     def scene_setup(
-        x: np.ndarray,
-        y: np.ndarray,
-        z: np.ndarray,
+        self,
         Bx: np.ndarray,
         By: np.ndarray,
         Bz: np.ndarray,
         seedtype: str,
     ) -> dict:
+
+        # vector_field does not take sparse grids (as far as I know) so we have
+        # to generate a dense xyz grid to get the vector field coordinates right
+        x, y, z = self.get_grid("dense")
+        Bnorm = np.sqrt(Bx ** 2 + By ** 2 + Bz ** 2)
         field = mlab.pipeline.vector_field(x, y, z, Bx, By, Bz, name="B field")
+        del x, y, z
         magnitude = mlab.pipeline.extract_vector_norm(field)
         contours: IsoSurface = mlab.pipeline.iso_surface(
             magnitude,
-            contours=3,
+            contours=4,
             transparent=True,
             opacity=0.6,
             colormap="YlGnBu",
@@ -200,7 +245,7 @@ class MagneticField(object):
         contours.actor.property.frontface_culling = True
         contours.normals.filter.feature_angle = 90
 
-        streamlines.stream_tracer.maximum_propagation = 150
+        streamlines.stream_tracer.maximum_propagation = 100
 
         pipeline_obj = {
             "field": field,
@@ -231,8 +276,38 @@ class MagneticField(object):
         ax = mlab.axes()
         mlab.view(azimuth=42, elevation=73)
 
+    def get_grid(
+        self, mat_type: str = "sparse"
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Return either a dense or a sparse 3D grid
+
+        Args:
+            mat_type (str, optional): dense or sparse. Defaults to "sparse".
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray, np.ndarray]: x, y, z
+        """
+
+        if mat_type == "sparse":
+            x, y, z = np.ogrid[
+                -self.Lx : self.Lx : self.sp,
+                -self.Ly : self.Ly : self.sp,
+                -self.Lz : self.Lz : self.sp,
+            ]
+            return x, y, z
+        elif mat_type == "dense":
+            x, y, z = np.mgrid[
+                -self.Lx : self.Lx : self.sp,
+                -self.Ly : self.Ly : self.sp,
+                -self.Lz : self.Lz : self.sp,
+            ]
+            return x, y, z
+        else:
+            raise (f"Input grid format: {mat_type} not supported")
+
 
 if __name__ == "__main__":
-    MagneticField.sphere_el(1.0, 1.0)
-    MagneticField.plane_el(1.0, 0.1)
-    MagneticField.line_el(1.0, 0.1)
+    plot = MagneticField()
+    plot.sphere_el(0.1, 0.01)
+    plot.plane_el(1.0, 0.1)
+    plot.line_el(1.0, 0.1)
