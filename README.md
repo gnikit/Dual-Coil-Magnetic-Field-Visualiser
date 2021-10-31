@@ -1,27 +1,27 @@
 ![symbol_nav](./doc/1.png)
 
-# Single-Coil-Magnetic-Field-Simulator
+# Dual Coil Magnetic Field Visualiser
 
-GUI of a 3D Simulation of a Magnetic field using Mayavi, Python (2.7)
+GUI of a 3D Simulation of a Magnetic field using Mayavi.
 
 ## What this is
 
-A computational model simulating the magnetic field emited by a single coil
-loop attached to a Python GUI.
+A computational model simulating the magnetic field emited by two coil
+loops parallel to another attached to a GUI.
 
 Elements to inspect the magnetic field include:
 
-## Line
+## Sphere (3D)
 
-![symbol_nav](./doc/line(1,1).png)
+![symbol_nav](./doc/sphere_glyph.png)
 
-## Plane
+## Plane (2D)
 
-![symbol_nav](./doc/plane(2,-3).png)
+![symbol_nav](./doc/plane_glyph.png)
 
-## Sphere
+## Line (1D)
 
-![symbol_nav](./doc/sphere(1,1).png)
+![symbol_nav](./doc/line_glyph.png)
 
 ## How to run
 
@@ -34,5 +34,6 @@ pip install PySide2 mayavi
 Run GUI:
 
 ```bash
-python Open_me.py
+python main.py
 ```
+![assets](./doc/gui.png)
