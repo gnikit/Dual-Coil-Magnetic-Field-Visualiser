@@ -1,4 +1,4 @@
-![symbol_nav](./doc/1.png)
+![symbol_nav](https://github.com/gnikit/Dual-Coil-Magnetic-Field-Visualiser/blob/master/doc/1.png)
 
 # Dual Coil Magnetic Field Visualiser
 
@@ -13,15 +13,15 @@ Elements to inspect the magnetic field include:
 
 ## Sphere (3D)
 
-![symbol_nav](./doc/sphere_glyph.png)
+![symbol_nav](https://github.com/gnikit/Dual-Coil-Magnetic-Field-Visualiser/blob/master/doc/sphere_glyph.png)
 
 ## Plane (2D)
 
-![symbol_nav](./doc/plane_glyph.png)
+![symbol_nav](https://github.com/gnikit/Dual-Coil-Magnetic-Field-Visualiser/blob/master/doc/plane_glyph.png)
 
 ## Line (1D)
 
-![symbol_nav](./doc/line_glyph.png)
+![symbol_nav](https://github.com/gnikit/Dual-Coil-Magnetic-Field-Visualiser/blob/master/doc/line_glyph.png)
 
 ## How to run
 
@@ -36,4 +36,4 @@ Run GUI:
 ```bash
 python main.py
 ```
-![assets](./doc/gui.png)
+![assets](https://github.com/gnikit/Dual-Coil-Magnetic-Field-Visualiser/blob/master/doc/gui.png)
